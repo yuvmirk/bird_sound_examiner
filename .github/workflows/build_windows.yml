@@ -24,6 +24,12 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
+    - name: Verify package installation
+      run: |
+        python -c "import librosa; print('librosa version:', librosa.__version__)"
+        python -c "import numpy; print('numpy version:', numpy.__version__)"
+        python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
+
     - name: Find Package Paths
       run: |
         echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__path__[0])")" >> $env:GITHUB_ENV
