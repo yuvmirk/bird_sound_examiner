@@ -24,9 +24,14 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
+    - name: Locate matplotlib
+      run: |
+        $matplotlibPath = (python -c "import matplotlib; print(matplotlib.__path__[0])")
+        echo "MATPLOTLIB_PATH=$matplotlibPath" >> $env:GITHUB_ENV
+    
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name="Bird Sound Examiner" --windowed --onefile --additional-hooks-dir=. --add-data "${{ runner.tool_cache }}/Python/3.9*/x64/Lib/site-packages/matplotlib:matplotlib" --hidden-import matplotlib --hidden-import matplotlib.backends.backend_tkagg --hidden-import numpy --hidden-import librosa --hidden-import sounddevice bird_sounds_filter_app.py
+        pyinstaller --name="Bird Sound Examiner" --windowed --onefile --additional-hooks-dir=. --add-data "$env:MATPLOTLIB_PATH;matplotlib" --hidden-import matplotlib --hidden-import matplotlib.backends.backend_tkagg --hidden-import numpy --hidden-import librosa --hidden-import sounddevice bird_sounds_filter_app.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v2
