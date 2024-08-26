@@ -1,34 +1,38 @@
-name: Build Windows Executable
+# -*- mode: python ; coding: utf-8 -*-
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+block_cipher = None
 
-jobs:
-  build:
-    runs-on: windows-latest
+a = Analysis(['app.py'],
+             pathex=[],
+             binaries=[],
+             datas=[],
+             hiddenimports=['matplotlib', 'matplotlib.backends.backend_tkagg', 'numpy', 'librosa', 'sounddevice'],
+             hookspath=[],
+             hooksconfig={},
+             runtime_hooks=[],
+             excludes=[],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher,
+             noarchive=False)
+pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
 
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
-    
-    - name: Build with PyInstaller
-      run: pyinstaller --name="Bird Sound Examiner" --windowed --onefile bird_sounds_filter_app.py
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: Bird Sound Examiner
-        path: dist/Bird Sound Examiner.exe
+exe = EXE(pyz,
+          a.scripts, 
+          a.binaries,
+          a.zipfiles,
+          a.datas,  
+          [],
+          name='Bird Sound Examiner',
+          debug=False,
+          bootloader_ignore_signals=False,
+          strip=False,
+          upx=True,
+          upx_exclude=[],
+          runtime_tmpdir=None,
+          console=False,
+          disable_windowed_traceback=False,
+          target_arch=None,
+          codesign_identity=None,
+          entitlements_file=None )
