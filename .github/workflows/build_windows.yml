@@ -24,9 +24,17 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
-
     - name: Build with PyInstaller
-      run: pyinstaller --name="Bird Sound Examiner" --windowed --onefile --hidden-import numpy --hidden-import librosa --hidden-import sounddevice --hidden-import matplotlib --hidden-import matplotlib.backends.backend_tkagg bird_sounds_filter_app.py
+      run: |
+        pyinstaller --name="Bird Sound Examiner" --windowed --onefile ^
+        --additional-hooks-dir=. ^
+        --add-data "C:\hostedtoolcache\windows\Python\3.9.*\x64\Lib\site-packages\matplotlib;matplotlib" ^
+        --hidden-import matplotlib ^
+        --hidden-import matplotlib.backends.backend_tkagg ^
+        --hidden-import numpy ^
+        --hidden-import librosa ^
+        --hidden-import sounddevice ^
+        bird_sounds_filter_app.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v2
