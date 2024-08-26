@@ -22,22 +22,27 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install matplotlib
         pip install pyinstaller
-    
-    - name: Debug dependencies
-      run: |
-        pip list
-        python -c "import sys; print(sys.path)"
-    
-    - name: Locate matplotlib
-      run: |
-        $matplotlibPath = (python -c "import matplotlib; print(matplotlib.__path__[0])")
-        echo "MATPLOTLIB_PATH=$matplotlibPath" >> $env:GITHUB_ENV
     
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name="Bird Sound Examiner" --windowed --onefile --additional-hooks-dir=. --add-data "$env:MATPLOTLIB_PATH;matplotlib" --hidden-import matplotlib --hidden-import matplotlib.backends.backend_tkagg --hidden-import numpy --hidden-import librosa --hidden-import sounddevice bird_sounds_filter_app.py
+        pyinstaller --name="Bird Sound Examiner" --windowed --onefile ^
+        --additional-hooks-dir=. ^
+        --hidden-import matplotlib ^
+        --hidden-import matplotlib.backends.backend_tkagg ^
+        --hidden-import numpy ^
+        --hidden-import librosa ^
+        --hidden-import sounddevice ^
+        --hidden-import tkinter ^
+        --hidden-import shutil ^
+        --collect-submodules librosa ^
+        --collect-submodules numpy ^
+        --collect-submodules sounddevice ^
+        --add-data "C:\hostedtoolcache\windows\Python\3.9.*\x64\Lib\site-packages\librosa;librosa" ^
+        --add-data "C:\hostedtoolcache\windows\Python\3.9.*\x64\Lib\site-packages\numpy;numpy" ^
+        --add-data "C:\hostedtoolcache\windows\Python\3.9.*\x64\Lib\site-packages\sounddevice;sounddevice" ^
+        --noupx ^
+        bird_sounds_filter_app.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v2
