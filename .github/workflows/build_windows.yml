@@ -24,6 +24,12 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
+    - name: Find Package Paths
+      run: |
+        echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__path__[0])")" >> $env:GITHUB_ENV
+        echo "NUMPY_PATH=$(python -c "import numpy; print(numpy.__path__[0])")" >> $env:GITHUB_ENV
+        echo "SOUNDDEVICE_PATH=$(python -c "import sounddevice; print(sounddevice.__path__[0])")" >> $env:GITHUB_ENV
+
     - name: Build with PyInstaller
       run: >-
         pyinstaller --name="Bird Sound Examiner" --windowed --onefile 
@@ -38,11 +44,12 @@ jobs:
         --collect-submodules librosa 
         --collect-submodules numpy 
         --collect-submodules sounddevice 
-        --add-data "${{ runner.tool_cache }}/Python/3.9*/x64/Lib/site-packages/librosa:librosa" 
-        --add-data "${{ runner.tool_cache }}/Python/3.9*/x64/Lib/site-packages/numpy:numpy" 
-        --add-data "${{ runner.tool_cache }}/Python/3.9*/x64/Lib/site-packages/sounddevice:sounddevice" 
+        --add-data "${{ env.LIBROSA_PATH }}:librosa" 
+        --add-data "${{ env.NUMPY_PATH }}:numpy" 
+        --add-data "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
         --noupx 
-        bird_sounds_filter_app.py    
+        bird_sounds_filter_app.py
+    
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
