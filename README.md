@@ -8,8 +8,8 @@ Bird Sound Examiner is a user-friendly desktop application designed for ornithol
 
 ### How to Download and Use the Application
 
-1. Go to the [Releases](https://github.com/yourusername/bird-sound-examiner/releases) page of this repository.
-2. Find the latest release and download the `Bird.Sound.Examiner.exe` file.
+1. Go to the [Releases page](https://github.com/yuvmirk/bird_sound_examiner/releases/tag/v1.0.0).
+2. Download the `Bird.Sound.Examiner.exe` file.
 3. Once downloaded, double-click the `.exe` file to run the application. No installation is required.
 
 ### Using the Application
@@ -47,7 +47,7 @@ If you're interested in the source code or contributing to the project:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/bird-sound-examiner.git
+   git clone https://github.com/yuvmirk/bird_sound_examiner.git
    ```
 2. Set up a virtual environment and install dependencies:
    ```
