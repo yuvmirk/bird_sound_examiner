@@ -1,15 +1,12 @@
 name: Build Windows Executable
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v2
     
@@ -32,12 +29,17 @@ jobs:
         python -c "import numpy; print('numpy version:', numpy.__version__)"
         python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
     
+    - name: Check sounddevice
+      run: |
+        python -c "import sounddevice; print(sounddevice.__file__)"
+        python -c "import sounddevice; print(dir(sounddevice))"
+    
     - name: Find Package Paths
       run: |
-        echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__path__[0])")" >> $env:GITHUB_ENV
-        echo "NUMPY_PATH=$(python -c "import numpy; print(numpy.__path__[0])")" >> $env:GITHUB_ENV
-        echo "SOUNDDEVICE_PATH=$(python -c "import sounddevice; print(sounddevice.__path__[0])")" >> $env:GITHUB_ENV
-
+        echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__file__)")" >> $env:GITHUB_ENV
+        echo "NUMPY_PATH=$(python -c "import numpy; print(numpy.__file__)")" >> $env:GITHUB_ENV
+        echo "SOUNDDEVICE_PATH=$(python -c "import sounddevice; print(sounddevice.__file__)")" >> $env:GITHUB_ENV
+    
     - name: Build with PyInstaller
       run: >-
         pyinstaller --name="Bird Sound Examiner" --windowed --onefile 
@@ -56,6 +58,7 @@ jobs:
         --add-data "${{ env.LIBROSA_PATH }}:librosa" 
         --add-data "${{ env.NUMPY_PATH }}:numpy" 
         --add-data "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
+        --add-binary "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
         --noupx 
         bird_sounds_filter_app.py
     
@@ -64,4 +67,3 @@ jobs:
       with:
         name: Bird Sound Examiner
         path: dist/Bird Sound Examiner.exe
-
