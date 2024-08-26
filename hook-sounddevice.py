@@ -1,4 +1,4 @@
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_dynamic_libs
 
-datas = collect_data_files('sounddevice')
-hiddenimports = collect_submodules('sounddevice')
+binaries = collect_dynamic_libs('sounddevice')
+hiddenimports = ['sounddevice']
