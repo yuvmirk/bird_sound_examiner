@@ -1,13 +1,17 @@
 import tkinter as tk
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, ttk
 import os
+import sys
+
+if getattr(sys, 'frozen', False):
+    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
+
 import shutil
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import librosa
 import sounddevice as sd
 import numpy as np
-import threading
 
 class BirdSoundApp:
     def __init__(self, master):
@@ -32,7 +36,7 @@ class BirdSoundApp:
         main_frame = ttk.Frame(self.master, padding="20 20 20 20")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Guidance Panel with larger font
+        # Guidance Panel
         guidance_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10 10 10 10", style="Large.TLabelframe")
         guidance_frame.pack(pady=10, fill=tk.X)
         
@@ -73,7 +77,7 @@ class BirdSoundApp:
         self.start_button = ttk.Button(main_frame, text="Start Examination", command=self.start_examination, style="Accent.TButton")
         self.start_button.pack(pady=10)
         
-        # Spectrogram (slightly smaller)
+        # Spectrogram
         spec_frame = ttk.Frame(main_frame)
         spec_frame.pack(pady=10, expand=True, fill=tk.BOTH)
         
@@ -106,7 +110,7 @@ class BirdSoundApp:
 
         # Remove focus from the Start button to prevent accidental activation
         self.start_button.config(takefocus=0)
-            
+
     def configure_styles(self):
         self.style.configure("TFrame", background="#f0f0f0")
         self.style.configure("TLabel", background="#f0f0f0", font=('Helvetica', 10))
