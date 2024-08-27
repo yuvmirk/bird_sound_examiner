@@ -20,7 +20,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-        pip install librosa numpy sounddevice matplotlib pyaudio
+        pip install librosa numpy sounddevice matplotlib pyaudio pytest scipy
 
     - name: Verify package installation
       run: |
@@ -30,6 +30,8 @@ jobs:
         python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
         python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
         python -c "import pyaudio; print('pyaudio version:', pyaudio.__version__)"
+        python -c "import pytest; print('pytest version:', pytest.__version__)"
+        python -c "import scipy; print('scipy version:', scipy.__version__)"
 
     - name: Find Package Paths
       run: |
@@ -51,15 +53,20 @@ jobs:
         --hidden-import tkinter 
         --hidden-import shutil 
         --hidden-import pyaudio
+        --hidden-import pytest
+        --hidden-import scipy
+        --hidden-import scipy.special._cdflib
         --collect-all matplotlib
         --collect-submodules librosa 
         --collect-submodules numpy 
         --collect-submodules sounddevice 
+        --collect-data sounddevice
         --add-data "${{ env.LIBROSA_PATH }}:librosa" 
         --add-data "${{ env.NUMPY_PATH }}:numpy" 
         --add-data "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
         --add-data "${{ env.MATPLOTLIB_PATH }}:matplotlib"
-        --add-binary "$(python -c "import sounddevice as sd; print(sd.__file__)"):sounddevice"
+        --add-binary "C:\Windows\System32\api-ms-win-core-path-l1-1-0.dll:."
+        --add-binary "$(python -c "import site; print(site.getsitepackages()[0])")\numba\np\ufunc\tbbpool.cp312-win_amd64.pyd:."
         --noupx 
         bird_sounds_filter_app.py
     
