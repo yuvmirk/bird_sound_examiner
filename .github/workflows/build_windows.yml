@@ -47,10 +47,6 @@ jobs:
         --collect-submodules librosa 
         --collect-submodules numpy 
         --collect-submodules sounddevice 
-        --add-data "${{ env.LIBROSA_PATH }}:librosa" 
-        --add-data "${{ env.NUMPY_PATH }}:numpy" 
-        --add-data "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
-        --add-data "${{ env.MATPLOTLIB_PATH }}:matplotlib"
         --exclude-module matplotlib.tests
         --exclude-module numpy.f2py.tests
         bird_sounds_filter_app.py
