@@ -20,8 +20,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
-        # Install problematic packages separately
         pip install librosa numpy sounddevice matplotlib
+        pip install pyaudio  # This should install PortAudio
 
     - name: Verify package installation
       run: |
@@ -30,14 +30,16 @@ jobs:
         python -c "import numpy; print('numpy version:', numpy.__version__)"
         python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
         python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
-    
+        python -c "import pyaudio; print('pyaudio version:', pyaudio.__version__)"
+
     - name: Find Package Paths
       run: |
         echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__file__)")" >> $env:GITHUB_ENV
         echo "NUMPY_PATH=$(python -c "import numpy; print(numpy.__file__)")" >> $env:GITHUB_ENV
         echo "SOUNDDEVICE_PATH=$(python -c "import sounddevice; print(sounddevice.__file__)")" >> $env:GITHUB_ENV
         echo "MATPLOTLIB_PATH=$(python -c "import matplotlib; print(matplotlib.__file__)")" >> $env:GITHUB_ENV
-    
+        echo "PORTAUDIO_PATH=$(python -c "import sounddevice; print(sounddevice._libportaudio_filename)")" >> $env:GITHUB_ENV
+
     - name: Build with PyInstaller
       run: >-
         pyinstaller --name="Bird Sound Examiner" --windowed --onefile 
@@ -50,6 +52,7 @@ jobs:
         --hidden-import sounddevice 
         --hidden-import tkinter 
         --hidden-import shutil 
+        --hidden-import pyaudio
         --collect-all matplotlib
         --collect-submodules librosa 
         --collect-submodules numpy 
@@ -58,7 +61,7 @@ jobs:
         --add-data "${{ env.NUMPY_PATH }}:numpy" 
         --add-data "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
         --add-data "${{ env.MATPLOTLIB_PATH }}:matplotlib"
-        --add-binary "${{ env.SOUNDDEVICE_PATH }}:sounddevice" 
+        --add-binary "${{ env.PORTAUDIO_PATH }}:." 
         --noupx 
         bird_sounds_filter_app.py
     
