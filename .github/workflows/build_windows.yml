@@ -1,4 +1,37 @@
-- name: Find Package Paths
+name: Build Windows Executable
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        pip install librosa numpy sounddevice matplotlib pyaudio
+
+    - name: Verify package installation
+      run: |
+        python -m pip list
+        python -c "import librosa; print('librosa version:', librosa.__version__)"
+        python -c "import numpy; print('numpy version:', numpy.__version__)"
+        python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
+        python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
+        python -c "import pyaudio; print('pyaudio version:', pyaudio.__version__)"
+
+    - name: Find Package Paths
       run: |
         echo "LIBROSA_PATH=$(python -c "import librosa; print(librosa.__file__)")" >> $env:GITHUB_ENV
         echo "NUMPY_PATH=$(python -c "import numpy; print(numpy.__file__)")" >> $env:GITHUB_ENV
@@ -29,3 +62,9 @@
         --add-binary "$(python -c "import sounddevice as sd; print(sd.__file__)"):sounddevice"
         --noupx 
         bird_sounds_filter_app.py
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: Bird Sound Examiner
+        path: dist/Bird Sound Examiner.exe
