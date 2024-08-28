@@ -33,6 +33,7 @@ class BirdSoundApp:
         self.noise_folder = "noise"
         self.false_positive_folder = "false_positive"
         self.progress_file = "filtered species - updated list.txt"
+        self.max_seg_num = 500
 
         self.create_widgets()
     
@@ -293,6 +294,12 @@ class BirdSoundApp:
             os.makedirs(target_folder, exist_ok=True)
             shutil.move(self.current_file, os.path.join(target_folder, os.path.basename(self.current_file)))
             print(f"Moved file to: {target_folder}")
+            if decision == "approve":
+                approved_files = len([f for f in os.listdir(target_folder) if f.lower().endswith(('.wav', '.mp3'))])
+                if approved_files >= self.max_seg_num:
+                    messagebox.showinfo("Process Complete", f"Reached {self.max_seg_num} approved files. Stopping examination.")
+                    self.reset_examination()
+                    return
             self.examine_next_file()
         except Exception as e:
             messagebox.showerror("Error", f"Error processing decision for file:\n{self.current_file}\n\nError: {str(e)}")
