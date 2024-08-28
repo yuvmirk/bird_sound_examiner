@@ -12,6 +12,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import librosa
 import sounddevice as sd
 import numpy as np
+import traceback
+
 
 class BirdSoundApp:
     def __init__(self, master):
@@ -238,6 +240,9 @@ class BirdSoundApp:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
             print(f"Examining file: {self.current_file}")
             try:
+                if not os.path.exists(self.current_file):
+                    raise FileNotFoundError(f"File not found: {self.current_file}")
+                
                 y, sr = librosa.load(self.current_file)
                 duration = librosa.get_duration(y=y, sr=sr)
 
@@ -254,14 +259,15 @@ class BirdSoundApp:
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
-                print(f"Error processing file {self.current_file}: {e}")
-                messagebox.showerror("File Error", f"Error processing file:\n{self.current_file}\n\nError: {str(e)}")
+                error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+                print(error_msg)
+                messagebox.showerror("File Error", error_msg)
                 self.examine_next_file()
         else:
             self.update_progress_file()
             messagebox.showinfo("Finished", "All files have been examined.")
             self.reset_examination()
-
+    
     def load_and_play_audio(self, y, sr):
         try:
             sd.play(y, sr)
@@ -282,6 +288,7 @@ class BirdSoundApp:
     def process_decision(self, decision):
         print(f"Processing decision: {decision}")
         if not self.current_file:
+            print("No current file to process")
             return
         try:
             if decision == "approve":
@@ -290,11 +297,26 @@ class BirdSoundApp:
                 target_folder = os.path.normpath(os.path.join(self.main_folder, self.noise_folder))
             elif decision == "false_positive":
                 target_folder = os.path.normpath(os.path.join(self.main_folder, self.false_positive_folder))
+            else:
+                print(f"Unknown decision: {decision}")
+                return
 
+            print(f"Target folder: {target_folder}")
             os.makedirs(target_folder, exist_ok=True)
             target_file = os.path.normpath(os.path.join(target_folder, os.path.basename(self.current_file)))
+            print(f"Moving file from {self.current_file} to {target_file}")
+            
+            # Check if source file exists
+            if not os.path.exists(self.current_file):
+                raise FileNotFoundError(f"Source file not found: {self.current_file}")
+            
+            # Check if we have write permissions in the target folder
+            if not os.access(os.path.dirname(target_file), os.W_OK):
+                raise PermissionError(f"No write permission for target folder: {os.path.dirname(target_file)}")
+            
             shutil.move(self.current_file, target_file)
-            print(f"Moved file to: {target_file}")
+            print(f"File successfully moved to: {target_file}")
+            
             if decision == "approve":
                 approved_files = len([f for f in os.listdir(target_folder) if f.lower().endswith(('.wav', '.mp3'))])
                 if approved_files >= self.max_seg_num:
@@ -303,7 +325,9 @@ class BirdSoundApp:
                     return
             self.examine_next_file()
         except Exception as e:
-            messagebox.showerror("Error", f"Error processing decision for file:\n{self.current_file}\n\nError: {str(e)}")
+            error_msg = f"Error processing decision for file:\n{self.current_file}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            print(error_msg)
+            messagebox.showerror("Error", error_msg)
             self.examine_next_file()
 
     def update_progress_file(self):
