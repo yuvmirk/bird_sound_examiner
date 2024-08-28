@@ -220,7 +220,7 @@ class BirdSoundApp:
         self.start_button.config(state=tk.NORMAL)
 
     def start_examination(self):
-        species_folder = os.path.join(self.main_folder, self.current_species.get())
+        species_folder = os.path.normpath(os.path.join(self.main_folder, self.current_species.get()))
         try:
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
             self.files_to_examine = np.random.permutation(all_files).tolist()
@@ -235,22 +235,22 @@ class BirdSoundApp:
 
     def examine_next_file(self):
         if self.files_to_examine:
-            self.current_file = os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0))
+            self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
             print(f"Examining file: {self.current_file}")
             try:
                 y, sr = librosa.load(self.current_file)
                 duration = librosa.get_duration(y=y, sr=sr)
-                
+
                 if len(y) == 0:
                     print(f"Warning: Empty audio file: {self.current_file}")
                     self.examine_next_file()
                     return
-                
+
                 if duration != 3.0:
                     print(f"Skipping file {self.current_file} as it is not exactly 3 seconds long (actual duration: {duration:.2f} seconds)")
                     self.examine_next_file()
                     return
-                
+
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
@@ -285,15 +285,16 @@ class BirdSoundApp:
             return
         try:
             if decision == "approve":
-                target_folder = os.path.join(self.main_folder, self.filtered_species_folder, self.current_species.get())
+                target_folder = os.path.normpath(os.path.join(self.main_folder, self.filtered_species_folder, self.current_species.get()))
             elif decision == "noise":
-                target_folder = os.path.join(self.main_folder, self.noise_folder)
+                target_folder = os.path.normpath(os.path.join(self.main_folder, self.noise_folder))
             elif decision == "false_positive":
-                target_folder = os.path.join(self.main_folder, self.false_positive_folder)
+                target_folder = os.path.normpath(os.path.join(self.main_folder, self.false_positive_folder))
 
             os.makedirs(target_folder, exist_ok=True)
-            shutil.move(self.current_file, os.path.join(target_folder, os.path.basename(self.current_file)))
-            print(f"Moved file to: {target_folder}")
+            target_file = os.path.normpath(os.path.join(target_folder, os.path.basename(self.current_file)))
+            shutil.move(self.current_file, target_file)
+            print(f"Moved file to: {target_file}")
             if decision == "approve":
                 approved_files = len([f for f in os.listdir(target_folder) if f.lower().endswith(('.wav', '.mp3'))])
                 if approved_files >= self.max_seg_num:
@@ -306,9 +307,14 @@ class BirdSoundApp:
             self.examine_next_file()
 
     def update_progress_file(self):
-        progress_file_path = os.path.join(self.main_folder, self.progress_file)
-        with open(progress_file_path, 'a') as f:
-            f.write(f"{self.current_species.get()}\n")
+        progress_file_path = os.path.normpath(os.path.join(self.main_folder, self.progress_file))
+        try:
+            with open(progress_file_path, 'a') as f:
+                f.write(f"{self.current_species.get()}\n")
+        except Exception as e:
+            print(f"Error updating progress file: {e}")
+            messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
+
 
 root = tk.Tk()
 app = BirdSoundApp(root)
