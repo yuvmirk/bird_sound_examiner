@@ -1,4 +1,5 @@
 import datetime
+from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import os
@@ -15,6 +16,20 @@ import numpy as np
 import traceback
 import soundfile as sf
 import sounddevice as sd
+
+class LoggingPrint:
+    def __init__(self, filename):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
 
 class BirdSoundApp:
     def __init__(self, master):
@@ -37,6 +52,10 @@ class BirdSoundApp:
         self.false_positive_folder = "false_positive"
         self.progress_file = "filtered species - updated list.txt"
         self.max_seg_num = 500
+        # Set up logging
+        log_file = os.path.join(os.path.expanduser('~'), 'Desktop', f'bird_sound_examiner_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
+        sys.stdout = LoggingPrint(log_file)
+        print(f"Logging started at {datetime.now()}")
 
         self.create_widgets()
     
@@ -224,20 +243,25 @@ class BirdSoundApp:
 
     def start_examination(self):
         species_folder = os.path.normpath(os.path.join(self.main_folder, self.current_species.get()))
+        print(f"Starting examination for species folder: {species_folder}")
         try:
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
+            print(f"All files found: {all_files}")
             self.files_to_examine = np.random.permutation(all_files).tolist()
-            print(f"Files found: {self.files_to_examine}")
+            print(f"Files to examine (randomized): {self.files_to_examine}")
             if self.files_to_examine:
                 self.start_button.config(state=tk.DISABLED)
                 self.examine_next_file()
             else:
+                print(f"No WAV or MP3 files found in the folder: {species_folder}")
                 messagebox.showinfo("No Files", f"No WAV or MP3 files found in the folder:\n{species_folder}")
         except Exception as e:
             error_msg = f"Error accessing species folder:\n{species_folder}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            print(error_msg)
             self.log_error(error_msg)
 
     def examine_next_file(self):
+        print(f"Entering examine_next_file. Files to examine: {len(self.files_to_examine)}")
         if self.files_to_examine:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
             print(f"Examining file: {self.current_file}")
@@ -267,14 +291,15 @@ class BirdSoundApp:
             except Exception as e:
                 error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
                 print(error_msg)
-                messagebox.showerror("File Error", error_msg)
+                self.log_error(error_msg)
                 self.examine_next_file()
         else:
+            print("No more files to examine. Entering completion block.")
             # Gather detailed information
             species_folder = os.path.join(self.main_folder, self.current_species.get())
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
             subfolders = [f.name for f in os.scandir(species_folder) if f.is_dir()]
-            
+
             detail_msg = f"""
             All files have been examined.
 
@@ -293,7 +318,7 @@ class BirdSoundApp:
             Path exists: {os.path.exists(species_folder)}
             Path is absolute: {os.path.isabs(species_folder)}
             """
-            print(detail_msg)  # Print to console for debugging
+            print(detail_msg)  # Print to console and log file
             messagebox.showinfo("Examination Complete", detail_msg)
             self.update_progress_file()
             self.reset_examination()
