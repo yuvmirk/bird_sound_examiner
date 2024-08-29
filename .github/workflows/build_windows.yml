@@ -31,6 +31,7 @@ jobs:
         python -c "import numpy; print('numpy version:', numpy.__version__)"
         python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
         python -c "import soundfile; print('soundfile version:', soundfile.__version__)"
+        python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
 
     - name: Build with PyInstaller
       run: >-
@@ -42,12 +43,14 @@ jobs:
         --hidden-import numpy 
         --hidden-import librosa 
         --hidden-import soundfile
+        --hidden-import sounddevice
         --hidden-import tkinter 
         --hidden-import shutil 
         --collect-all matplotlib
         --collect-submodules librosa 
         --collect-submodules numpy 
         --collect-submodules soundfile
+        --collect-submodules sounddevice
         bird_sounds_filter_app.py
     
     - name: Upload artifact
