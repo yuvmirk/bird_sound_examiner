@@ -13,6 +13,7 @@ import librosa
 import sounddevice as sd
 import numpy as np
 import traceback
+import soundfile as sf
 
 
 class BirdSoundApp:
@@ -240,10 +241,11 @@ class BirdSoundApp:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
             print(f"Examining file: {self.current_file}")
             try:
-                if not os.path.exists(self.current_file):
-                    raise FileNotFoundError(f"File not found: {self.current_file}")
-                
-                y, sr = librosa.load(self.current_file)
+                print(f"Attempting to load file: {self.current_file}")
+                print(f"File exists: {os.path.exists(self.current_file)}")
+                print(f"File size: {os.path.getsize(self.current_file)} bytes")
+                y, sr = sf.read(self.current_file)
+                print(f"File loaded successfully. Sample rate: {sr}, Length: {len(y)}")
                 duration = librosa.get_duration(y=y, sr=sr)
 
                 if len(y) == 0:
@@ -259,9 +261,12 @@ class BirdSoundApp:
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
-                error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-                print(error_msg)
-                messagebox.showerror("File Error", error_msg)
+                print(f"Error processing file {self.current_file}: {e}")
+                print(f"Error type: {type(e).__name__}")
+                print(f"Error details: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                messagebox.showerror("File Error", f"Error processing file:\n{self.current_file}\n\nError: {str(e)}\n\nCheck console for full traceback.")
                 self.examine_next_file()
         else:
             self.update_progress_file()
