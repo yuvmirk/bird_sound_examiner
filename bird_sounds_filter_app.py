@@ -7,6 +7,8 @@ if getattr(sys, 'frozen', False):
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
 
 import shutil
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import librosa
