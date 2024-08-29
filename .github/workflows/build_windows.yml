@@ -25,15 +25,15 @@ jobs:
         pip install pyinstaller
 
     - name: Build with PyInstaller
-      run: |
-        pyinstaller --name="Bird Sound Examiner" --windowed --onefile ^
-        --hidden-import matplotlib ^
-        --hidden-import matplotlib.backends.backend_tkagg ^
-        --hidden-import matplotlib.figure ^
-        --hidden-import numpy ^
-        --hidden-import librosa ^
-        --hidden-import soundfile ^
-        --add-data "%USERPROFILE%\AppData\Local\Programs\Python\Python39\Lib\site-packages\matplotlib;matplotlib" ^
+      run: >-
+        pyinstaller --name="Bird Sound Examiner" --windowed --onefile 
+        --hidden-import matplotlib 
+        --hidden-import matplotlib.backends.backend_tkagg 
+        --hidden-import matplotlib.figure 
+        --hidden-import numpy 
+        --hidden-import librosa 
+        --hidden-import soundfile 
+        --add-data "%USERPROFILE%\AppData\Local\Programs\Python\Python39\Lib\site-packages\matplotlib;matplotlib" 
         bird_sounds_filter_app.py
 
     - name: Upload artifact
