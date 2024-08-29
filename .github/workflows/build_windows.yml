@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
     - uses: actions/checkout@v2
     
@@ -24,17 +24,24 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
+    - name: Debug Info
+      run: |
+        python -c "import sys; print(sys.executable)"
+        python -c "import matplotlib; print(matplotlib.__file__)"
+        python -c "import matplotlib; print(matplotlib.get_data_path())"
+
     - name: Build with PyInstaller
-      run: >-
-        pyinstaller --name="Bird Sound Examiner" --windowed --onefile 
-        --hidden-import matplotlib 
-        --hidden-import matplotlib.backends.backend_tkagg 
-        --hidden-import matplotlib.figure 
-        --hidden-import numpy 
-        --hidden-import librosa 
-        --hidden-import soundfile 
-        --add-data "%USERPROFILE%\AppData\Local\Programs\Python\Python39\Lib\site-packages\matplotlib;matplotlib" 
-        bird_sounds_filter_app.py
+      run: |
+        $matplotlibDataPath = python -c "import matplotlib; print(matplotlib.get_data_path())"
+        pyinstaller --name="Bird Sound Examiner" --windowed --onefile `
+          --hidden-import matplotlib `
+          --hidden-import matplotlib.backends.backend_tkagg `
+          --hidden-import matplotlib.figure `
+          --hidden-import numpy `
+          --hidden-import librosa `
+          --hidden-import soundfile `
+          --add-data "$matplotlibDataPath;matplotlib" `
+          bird_sounds_filter_app.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
