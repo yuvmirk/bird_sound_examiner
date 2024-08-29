@@ -236,7 +236,7 @@ class BirdSoundApp:
         except Exception as e:
             error_msg = f"Error accessing species folder:\n{species_folder}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             self.log_error(error_msg)
-            
+
     def examine_next_file(self):
         if self.files_to_examine:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
@@ -265,14 +265,39 @@ class BirdSoundApp:
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
-                error_msg = f"Error processing file {self.current_file}:\n{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-                self.log_error(error_msg)
+                error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+                print(error_msg)
+                messagebox.showerror("File Error", error_msg)
                 self.examine_next_file()
         else:
+            # Gather detailed information
+            species_folder = os.path.join(self.main_folder, self.current_species.get())
+            all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
+            subfolders = [f.name for f in os.scandir(species_folder) if f.is_dir()]
+            
+            detail_msg = f"""
+            All files have been examined.
+
+            Main folder: {self.main_folder}
+            Current species folder: {species_folder}
+            Number of subfolders: {len(subfolders)}
+            Subfolders: {', '.join(subfolders)}
+            Total audio files found: {len(all_files)}
+            Files processed: {len(all_files) - len(self.files_to_examine)}
+
+            Folder permissions:
+            Read: {os.access(species_folder, os.R_OK)}
+            Write: {os.access(species_folder, os.W_OK)}
+            Execute: {os.access(species_folder, os.X_OK)}
+
+            Path exists: {os.path.exists(species_folder)}
+            Path is absolute: {os.path.isabs(species_folder)}
+            """
+            print(detail_msg)  # Print to console for debugging
+            messagebox.showinfo("Examination Complete", detail_msg)
             self.update_progress_file()
-            messagebox.showinfo("Finished", "All files have been examined.")
             self.reset_examination()
-    
+
     def load_and_play_audio(self, y, sr):
         try:
             sd.play(y, sr)
