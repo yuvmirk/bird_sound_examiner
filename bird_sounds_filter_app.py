@@ -1,3 +1,4 @@
+import datetime
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import os
@@ -241,13 +242,16 @@ class BirdSoundApp:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
             print(f"Examining file: {self.current_file}")
             try:
+                if not os.path.exists(self.current_file):
+                    raise FileNotFoundError(f"File not found: {self.current_file}")
                 print(f"Attempting to load file: {self.current_file}")
                 print(f"File exists: {os.path.exists(self.current_file)}")
                 print(f"File size: {os.path.getsize(self.current_file)} bytes")
-                y, sr = sf.read(self.current_file)
-                print(f"File loaded successfully. Sample rate: {sr}, Length: {len(y)}")
-                duration = librosa.get_duration(y=y, sr=sr)
+                with sf.SoundFile(self.current_file) as sound_file:
+                    y = sound_file.read(dtype="float32")
+                    sr = sound_file.samplerate
 
+                duration = len(y) / sr
                 if len(y) == 0:
                     print(f"Warning: Empty audio file: {self.current_file}")
                     self.examine_next_file()
@@ -261,12 +265,10 @@ class BirdSoundApp:
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
-                print(f"Error processing file {self.current_file}: {e}")
-                print(f"Error type: {type(e).__name__}")
-                print(f"Error details: {str(e)}")
-                import traceback
-                traceback.print_exc()
-                messagebox.showerror("File Error", f"Error processing file:\n{self.current_file}\n\nError: {str(e)}\n\nCheck console for full traceback.")
+                error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+                self.log_error(error_msg)
+                print(error_msg)
+                messagebox.showerror("File Error", "An error occurred. Check error_log.txt for details.")
                 self.examine_next_file()
         else:
             self.update_progress_file()
@@ -343,7 +345,11 @@ class BirdSoundApp:
         except Exception as e:
             print(f"Error updating progress file: {e}")
             messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
-
+    def log_error(self, error_msg):
+        with open("error_log.txt", "a") as log_file:
+            log_file.write(f"\n{datetime.now()}: {error_msg}\n")
+        print(f"Error logged to error_log.txt")
+    
 
 root = tk.Tk()
 app = BirdSoundApp(root)

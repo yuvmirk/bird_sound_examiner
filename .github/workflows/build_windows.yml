@@ -1,22 +1,19 @@
 name: Build Windows Executable
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v2
     
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.12'
     
     - name: Install dependencies
       run: |
@@ -24,24 +21,19 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Install problematic packages
-      run: |
-        pip install librosa numpy matplotlib soundfile sounddevice
-
     - name: Verify package installation
       run: |
         python -m pip list
         python -c "import librosa; print('librosa version:', librosa.__version__)"
         python -c "import numpy; print('numpy version:', numpy.__version__)"
-        python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
-        python -c "import soundfile; print('soundfile version:', soundfile.__version__)"
         python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
+        python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
+        python -c "import pyaudio; print('pyaudio version:', pyaudio.__version__)"
 
-    - name: Locate sounddevice data
+    - name: Find PortAudio DLL
       run: |
-        $sdPath = python -c "import sounddevice; print(sounddevice.__file__)"
-        $sdDir = Split-Path -Parent $sdPath
-        echo "SOUNDDEVICE_PATH=$sdDir" >> $env:GITHUB_ENV
+        $portaudioPath = (python -c "import sounddevice as sd; import os; print(os.path.dirname(sd.__file__))")
+        echo "PORTAUDIO_PATH=$portaudioPath" >> $env:GITHUB_ENV
 
     - name: Build with PyInstaller
       run: >-
@@ -52,16 +44,17 @@ jobs:
         --hidden-import matplotlib.pyplot
         --hidden-import numpy 
         --hidden-import librosa 
-        --hidden-import soundfile
-        --hidden-import sounddevice
+        --hidden-import sounddevice 
         --hidden-import tkinter 
         --hidden-import shutil 
+        --hidden-import pyaudio
         --collect-all matplotlib
         --collect-submodules librosa 
         --collect-submodules numpy 
-        --collect-submodules soundfile
-        --collect-submodules sounddevice
-        --add-data "$env:SOUNDDEVICE_PATH\_sounddevice_data\portaudio-binaries;sounddevice\_sounddevice_data\portaudio-binaries"
+        --collect-submodules sounddevice 
+        --exclude-module matplotlib.tests
+        --exclude-module numpy.f2py.tests
+        --add-data "${{ env.PORTAUDIO_PATH }}:."
         bird_sounds_filter_app.py
     
     - name: Upload artifact
