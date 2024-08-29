@@ -11,11 +11,10 @@ import shutil
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import librosa
-import sounddevice as sd
 import numpy as np
 import traceback
 import soundfile as sf
-
+import sounddevice as sd
 
 class BirdSoundApp:
     def __init__(self, master):
@@ -235,8 +234,9 @@ class BirdSoundApp:
             else:
                 messagebox.showinfo("No Files", f"No WAV or MP3 files found in the folder:\n{species_folder}")
         except Exception as e:
-            messagebox.showerror("Error", f"Error accessing species folder:\n{species_folder}\n\nError: {str(e)}")
-
+            error_msg = f"Error accessing species folder:\n{species_folder}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            self.log_error(error_msg)
+            
     def examine_next_file(self):
         if self.files_to_examine:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
@@ -265,10 +265,8 @@ class BirdSoundApp:
                 self.load_and_play_audio(y, sr)
                 self.display_spectrogram(y, sr)
             except Exception as e:
-                error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+                error_msg = f"Error processing file {self.current_file}:\n{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
                 self.log_error(error_msg)
-                print(error_msg)
-                messagebox.showerror("File Error", "An error occurred. Check error_log.txt for details.")
                 self.examine_next_file()
         else:
             self.update_progress_file()
@@ -345,10 +343,13 @@ class BirdSoundApp:
         except Exception as e:
             print(f"Error updating progress file: {e}")
             messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
+    
     def log_error(self, error_msg):
-        with open("error_log.txt", "a") as log_file:
-            log_file.write(f"\n{datetime.now()}: {error_msg}\n")
-        print(f"Error logged to error_log.txt")
+        log_file_path = os.path.join(os.path.expanduser('~'), 'Desktop', 'bird_sound_examiner_error_log.txt')
+        with open(log_file_path, "a") as log_file:
+            log_file.write(f"\n{datetime.datetime.now()}: {error_msg}\n")
+        print(f"Error logged to {log_file_path}")
+        messagebox.showerror("Error", f"An error occurred. Error details:\n\n{error_msg}\n\nThis error has been logged to:\n{log_file_path}")
     
 
 root = tk.Tk()
