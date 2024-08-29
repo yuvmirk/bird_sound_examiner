@@ -28,6 +28,11 @@ jobs:
       run: |
         pip install librosa numpy matplotlib soundfile sounddevice
 
+    - name: Install PortAudio
+      run: |
+        choco install portaudio
+        echo "C:\Program Files\portaudio\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
     - name: Verify package installation
       run: |
         python -m pip list
@@ -55,6 +60,7 @@ jobs:
         --collect-submodules numpy 
         --collect-submodules soundfile
         --collect-submodules sounddevice
+        --add-binary "C:\Program Files\portaudio\lib\portaudio_x64.dll;."
         bird_sounds_filter_app.py
     
     - name: Upload artifact
