@@ -24,16 +24,6 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Download and Install PortAudio
-      run: |
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "http://files.portaudio.com/archives/pa_stable_v190700_20210406.tgz" -OutFile "portaudio.tgz"
-        tar -xzvf portaudio.tgz
-        cd portaudio
-        .\configure
-        nmake
-        nmake install
-
     - name: Install problematic packages
       run: |
         pip install librosa numpy matplotlib soundfile sounddevice
@@ -46,6 +36,12 @@ jobs:
         python -c "import matplotlib; print('matplotlib version:', matplotlib.__version__)"
         python -c "import soundfile; print('soundfile version:', soundfile.__version__)"
         python -c "import sounddevice; print('sounddevice version:', sounddevice.__version__)"
+
+    - name: Locate sounddevice data
+      run: |
+        $sdPath = python -c "import sounddevice; print(sounddevice.__file__)"
+        $sdDir = Split-Path -Parent $sdPath
+        echo "SOUNDDEVICE_PATH=$sdDir" >> $env:GITHUB_ENV
 
     - name: Build with PyInstaller
       run: >-
@@ -65,7 +61,7 @@ jobs:
         --collect-submodules numpy 
         --collect-submodules soundfile
         --collect-submodules sounddevice
-        --add-binary "C:\Program Files (x86)\PortAudio\lib\portaudio_x64.dll:."
+        --add-data "$env:SOUNDDEVICE_PATH\_sounddevice_data\portaudio-binaries;sounddevice\_sounddevice_data\portaudio-binaries"
         bird_sounds_filter_app.py
     
     - name: Upload artifact
