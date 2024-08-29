@@ -1,5 +1,3 @@
-import datetime
-from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import os
@@ -52,10 +50,10 @@ class BirdSoundApp:
         self.false_positive_folder = "false_positive"
         self.progress_file = "filtered species - updated list.txt"
         self.max_seg_num = 500
-        # Set up logging
-        log_file = os.path.join(os.path.expanduser('~'), 'Desktop', f'bird_sound_examiner_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
-        sys.stdout = LoggingPrint(log_file)
-        print(f"Logging started at {datetime.now()}")
+        # logging
+        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+        self.log_file = os.path.join(desktop_path, f'bird_sound_examiner_log_.txt')
+        self.log_message("Application started")
 
         self.create_widgets()
     
@@ -243,46 +241,46 @@ class BirdSoundApp:
 
     def start_examination(self):
         species_folder = os.path.normpath(os.path.join(self.main_folder, self.current_species.get()))
-        print(f"Starting examination for species folder: {species_folder}")
+        self.log_message(f"Starting examination for species folder: {species_folder}")
         try:
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
-            print(f"All files found: {all_files}")
+            self.log_message(f"All files found: {all_files}")
             self.files_to_examine = np.random.permutation(all_files).tolist()
-            print(f"Files to examine (randomized): {self.files_to_examine}")
+            self.log_message(f"Files to examine (randomized): {self.files_to_examine}")
             if self.files_to_examine:
                 self.start_button.config(state=tk.DISABLED)
                 self.examine_next_file()
             else:
-                print(f"No WAV or MP3 files found in the folder: {species_folder}")
+                self.log_message(f"No WAV or MP3 files found in the folder: {species_folder}")
                 messagebox.showinfo("No Files", f"No WAV or MP3 files found in the folder:\n{species_folder}")
         except Exception as e:
             error_msg = f"Error accessing species folder:\n{species_folder}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            print(error_msg)
+            self.log_message(error_msg)
             self.log_error(error_msg)
 
     def examine_next_file(self):
-        print(f"Entering examine_next_file. Files to examine: {len(self.files_to_examine)}")
+        self.log_message(f"Entering examine_next_file. Files to examine: {len(self.files_to_examine)}")
         if self.files_to_examine:
             self.current_file = os.path.normpath(os.path.join(self.main_folder, self.current_species.get(), self.files_to_examine.pop(0)))
-            print(f"Examining file: {self.current_file}")
+            self.log_message(f"Examining file: {self.current_file}")
             try:
                 if not os.path.exists(self.current_file):
                     raise FileNotFoundError(f"File not found: {self.current_file}")
-                print(f"Attempting to load file: {self.current_file}")
-                print(f"File exists: {os.path.exists(self.current_file)}")
-                print(f"File size: {os.path.getsize(self.current_file)} bytes")
+                self.log_message(f"Attempting to load file: {self.current_file}")
+                self.log_message(f"File exists: {os.path.exists(self.current_file)}")
+                self.log_message(f"File size: {os.path.getsize(self.current_file)} bytes")
                 with sf.SoundFile(self.current_file) as sound_file:
                     y = sound_file.read(dtype="float32")
                     sr = sound_file.samplerate
 
                 duration = len(y) / sr
                 if len(y) == 0:
-                    print(f"Warning: Empty audio file: {self.current_file}")
+                    self.log_message(f"Warning: Empty audio file: {self.current_file}")
                     self.examine_next_file()
                     return
 
                 if duration != 3.0:
-                    print(f"Skipping file {self.current_file} as it is not exactly 3 seconds long (actual duration: {duration:.2f} seconds)")
+                    self.log_message(f"Skipping file {self.current_file} as it is not exactly 3 seconds long (actual duration: {duration:.2f} seconds)")
                     self.examine_next_file()
                     return
 
@@ -290,11 +288,11 @@ class BirdSoundApp:
                 self.display_spectrogram(y, sr)
             except Exception as e:
                 error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-                print(error_msg)
+                self.log_message(error_msg)
                 self.log_error(error_msg)
                 self.examine_next_file()
         else:
-            print("No more files to examine. Entering completion block.")
+            self.log_message("No more files to examine. Entering completion block.")
             # Gather detailed information
             species_folder = os.path.join(self.main_folder, self.current_species.get())
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
@@ -318,7 +316,7 @@ class BirdSoundApp:
             Path exists: {os.path.exists(species_folder)}
             Path is absolute: {os.path.isabs(species_folder)}
             """
-            print(detail_msg)  # Print to console and log file
+            self.log_message(detail_msg)
             messagebox.showinfo("Examination Complete", detail_msg)
             self.update_progress_file()
             self.reset_examination()
@@ -327,7 +325,7 @@ class BirdSoundApp:
         try:
             sd.play(y, sr)
         except Exception as e:
-            print(f"Error playing audio: {e}")
+            self.log_message(f"Error playing audio: {e}")
             messagebox.showwarning("Audio Playback Error", "Unable to play audio. The spectrogram will still be displayed.")
 
     def display_spectrogram(self, y, sr):
@@ -341,9 +339,9 @@ class BirdSoundApp:
         self.canvas.draw()
     
     def process_decision(self, decision):
-        print(f"Processing decision: {decision}")
+        self.log_message(f"Processing decision: {decision}")
         if not self.current_file:
-            print("No current file to process")
+            self.log_message("No current file to process")
             return
         try:
             if decision == "approve":
@@ -353,13 +351,13 @@ class BirdSoundApp:
             elif decision == "false_positive":
                 target_folder = os.path.normpath(os.path.join(self.main_folder, self.false_positive_folder))
             else:
-                print(f"Unknown decision: {decision}")
+                self.log_message(f"Unknown decision: {decision}")
                 return
 
-            print(f"Target folder: {target_folder}")
+            self.log_message(f"Target folder: {target_folder}")
             os.makedirs(target_folder, exist_ok=True)
             target_file = os.path.normpath(os.path.join(target_folder, os.path.basename(self.current_file)))
-            print(f"Moving file from {self.current_file} to {target_file}")
+            self.log_message(f"Moving file from {self.current_file} to {target_file}")
             
             # Check if source file exists
             if not os.path.exists(self.current_file):
@@ -370,7 +368,7 @@ class BirdSoundApp:
                 raise PermissionError(f"No write permission for target folder: {os.path.dirname(target_file)}")
             
             shutil.move(self.current_file, target_file)
-            print(f"File successfully moved to: {target_file}")
+            self.log_message(f"File successfully moved to: {target_file}")
             
             if decision == "approve":
                 approved_files = len([f for f in os.listdir(target_folder) if f.lower().endswith(('.wav', '.mp3'))])
@@ -381,7 +379,7 @@ class BirdSoundApp:
             self.examine_next_file()
         except Exception as e:
             error_msg = f"Error processing decision for file:\n{self.current_file}\n\nError: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            print(error_msg)
+            self.log_message(error_msg)
             messagebox.showerror("Error", error_msg)
             self.examine_next_file()
 
@@ -391,16 +389,20 @@ class BirdSoundApp:
             with open(progress_file_path, 'a') as f:
                 f.write(f"{self.current_species.get()}\n")
         except Exception as e:
-            print(f"Error updating progress file: {e}")
+            self.log_message(f"Error updating progress file: {e}")
             messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
     
     def log_error(self, error_msg):
         log_file_path = os.path.join(os.path.expanduser('~'), 'Desktop', 'bird_sound_examiner_error_log.txt')
         with open(log_file_path, "a") as log_file:
-            log_file.write(f"\n{datetime.datetime.now()}: {error_msg}\n")
-        print(f"Error logged to {log_file_path}")
+            log_file.write(f"{error_msg}\n")
+        self.log_message(f"Error logged to {log_file_path}")
         messagebox.showerror("Error", f"An error occurred. Error details:\n\n{error_msg}\n\nThis error has been logged to:\n{log_file_path}")
-    
+    def log_message(self, message):
+        log_entry = f"{message}\n"
+        with open(self.log_file, 'a', encoding='utf-8') as f:
+            f.write(log_entry)
+
 
 root = tk.Tk()
 app = BirdSoundApp(root)
