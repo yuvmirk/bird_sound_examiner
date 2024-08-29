@@ -24,6 +24,10 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
+    - name: Install problematic packages
+      run: |
+        pip install librosa numpy matplotlib soundfile sounddevice
+
     - name: Verify package installation
       run: |
         python -m pip list
