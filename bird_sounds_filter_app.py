@@ -300,24 +300,7 @@ class BirdSoundApp:
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
             subfolders = [f.name for f in os.scandir(species_folder) if f.is_dir()]
 
-            detail_msg = f"""
-            All files have been examined.
-
-            Main folder: {self.main_folder}
-            Current species folder: {species_folder}
-            Number of subfolders: {len(subfolders)}
-            Subfolders: {', '.join(subfolders)}
-            Total audio files found: {len(all_files)}
-            Files processed: {len(all_files) - len(self.files_to_examine)}
-
-            Folder permissions:
-            Read: {os.access(species_folder, os.R_OK)}
-            Write: {os.access(species_folder, os.W_OK)}
-            Execute: {os.access(species_folder, os.X_OK)}
-
-            Path exists: {os.path.exists(species_folder)}
-            Path is absolute: {os.path.isabs(species_folder)}
-            """
+            detail_msg = "All files have been examined."
             self.log_message(detail_msg)
             messagebox.showinfo("Examination Complete", detail_msg)
             self.update_progress_file()
