@@ -16,6 +16,8 @@ import numpy as np
 import traceback
 import soundfile as sf
 import sounddevice as sd
+import tempfile
+
 
 class LoggingPrint:
     def __init__(self, filename):
@@ -53,10 +55,14 @@ class BirdSoundApp:
         self.progress_file = "filtered species - updated list.txt"
         self.max_seg_num = 500
         # logging
-        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
-        self.log_file = os.path.join(desktop_path, f'bird_sound_examiner_log_.txt')
-        self.log_message("Application started")
-
+        temp_dir = tempfile.gettempdir()
+        self.log_file = os.path.join(temp_dir, 'bird_sound_examiner_log.txt')
+        try:
+            with open(self.log_file, 'a') as f:
+                f.write("Application started\n")
+        except Exception as e:
+            print(f"Warning: Unable to create or write to log file. Error: {e}")
+            self.log_file = None
         self.create_widgets()
     
     def create_widgets(self):
@@ -285,9 +291,10 @@ class BirdSoundApp:
                     self.log_message(f"Skipping file {self.current_file} as it is not exactly 3 seconds long (actual duration: {duration:.2f} seconds)")
                     self.examine_next_file()
                     return
-
-                self.load_and_play_audio(y, sr)
+                
                 self.display_spectrogram(y, sr)
+                self.load_and_play_audio(y, sr)
+                
             except Exception as e:
                 error_msg = f"Error processing file {self.current_file}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
                 self.log_message(error_msg)
@@ -296,10 +303,6 @@ class BirdSoundApp:
         else:
             self.log_message("No more files to examine. Entering completion block.")
             # Gather detailed information
-            species_folder = os.path.join(self.main_folder, self.current_species.get())
-            all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
-            subfolders = [f.name for f in os.scandir(species_folder) if f.is_dir()]
-
             detail_msg = "All files have been examined."
             self.log_message(detail_msg)
             messagebox.showinfo("Examination Complete", detail_msg)
@@ -378,15 +381,17 @@ class BirdSoundApp:
             messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
     
     def log_error(self, error_msg):
-        log_file_path = os.path.join(os.path.expanduser('~'), 'Desktop', 'bird_sound_examiner_error_log.txt')
+        log_file_path = os.path.join(temp_dir, 'bird_sound_examiner_error_log.txt')
         with open(log_file_path, "a") as log_file:
             log_file.write(f"{error_msg}\n")
         self.log_message(f"Error logged to {log_file_path}")
         messagebox.showerror("Error", f"An error occurred. Error details:\n\n{error_msg}\n\nThis error has been logged to:\n{log_file_path}")
+    
     def log_message(self, message):
         log_entry = f"{message}\n"
-        with open(self.log_file, 'a', encoding='utf-8') as f:
-            f.write(log_entry)
+        if self.log_file:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(log_entry)
 
 
 root = tk.Tk()
