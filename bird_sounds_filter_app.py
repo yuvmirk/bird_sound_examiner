@@ -54,6 +54,8 @@ class BirdSoundApp:
         self.false_positive_folder = "false_positive"
         self.progress_file = "filtered species - updated list.txt"
         self.max_seg_num = 500
+        self.approved_count = tk.IntVar(value=0)
+
         # logging
         temp_dir = tempfile.gettempdir()
         self.log_file = os.path.join(temp_dir, 'bird_sound_examiner_log.txt')
@@ -127,6 +129,19 @@ class BirdSoundApp:
         self.canvas.draw()
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(expand=True, fill=tk.BOTH)
+
+        # New frame for additional controls
+        additional_controls_frame = ttk.Frame(main_frame)
+        additional_controls_frame.pack(pady=10, fill=tk.X)
+
+        self.play_again_button = ttk.Button(additional_controls_frame, text="Play Again", command=self.play_again, style="RoundedButton.TButton")
+        self.play_again_button.pack(side=tk.LEFT, padx=5)
+
+        self.approved_count_label = ttk.Label(additional_controls_frame, text="Approved Files: 0", font=('Helvetica', 12, 'bold'))
+        self.approved_count_label.pack(side=tk.LEFT, padx=20)
+
+        self.set_threshold_button = ttk.Button(additional_controls_frame, text="Set Max Files Threshold", command=self.set_max_files_threshold, style="RoundedButton.TButton")
+        self.set_threshold_button.pack(side=tk.RIGHT, padx=5)
 
         # Control buttons
         control_frame = ttk.Frame(main_frame)
@@ -230,7 +245,8 @@ class BirdSoundApp:
             self.folder_label.config(text=self.main_folder)
             self.update_species_dropdown()
             self.reset_examination()
-
+            self.update_approved_count()
+    
     def reset_examination(self):
         self.current_file = ""
         self.files_to_examine = []
@@ -246,6 +262,7 @@ class BirdSoundApp:
 
     def on_species_selected(self, event):
         self.start_button.config(state=tk.NORMAL)
+        self.update_approved_count()
 
     def start_examination(self):
         species_folder = os.path.normpath(os.path.join(self.main_folder, self.current_species.get()))
@@ -311,6 +328,7 @@ class BirdSoundApp:
 
     def load_and_play_audio(self, y, sr):
         try:
+            sd.stop()  # Stop any currently playing audio
             sd.play(y, sr)
         except Exception as e:
             self.log_message(f"Error playing audio: {e}")
@@ -359,8 +377,9 @@ class BirdSoundApp:
             self.log_message(f"File successfully moved to: {target_file}")
             
             if decision == "approve":
-                approved_files = len([f for f in os.listdir(target_folder) if f.lower().endswith(('.wav', '.mp3'))])
-                if approved_files >= self.max_seg_num:
+                self.approved_count.set(self.approved_count.get() + 1)
+                self.update_approved_count_label()
+                if self.approved_count.get() >= self.max_seg_num:
                     messagebox.showinfo("Process Complete", f"Reached {self.max_seg_num} approved files. Stopping examination.")
                     self.reset_examination()
                     return
@@ -393,6 +412,36 @@ class BirdSoundApp:
             with open(self.log_file, 'a', encoding='utf-8') as f:
                 f.write(log_entry)
 
+    def play_again(self):
+        if self.current_file:
+            try:
+                y, sr = sf.read(self.current_file, dtype="float32")
+                self.load_and_play_audio(y, sr)
+            except Exception as e:
+                self.log_message(f"Error playing audio again: {e}")
+                messagebox.showwarning("Audio Playback Error", "Unable to play audio again.")
+
+    def update_approved_count(self):
+        if self.main_folder and self.current_species.get():
+            species_folder = os.path.join(self.main_folder, self.filtered_species_folder, self.current_species.get())
+            if os.path.exists(species_folder):
+                count = len([f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))])
+                self.approved_count.set(count)
+            else:
+                self.approved_count.set(0)
+        else:
+            self.approved_count.set(0)
+        self.update_approved_count_label()
+
+    def update_approved_count_label(self):
+        self.approved_count_label.config(text=f"Approved Files: {self.approved_count.get()}")
+
+    def set_max_files_threshold(self):
+        new_threshold = simpledialog.askinteger("Set Threshold", "Enter new maximum files threshold:", 
+                                                initialvalue=self.max_seg_num, minvalue=1, maxvalue=10000)
+        if new_threshold:
+            self.max_seg_num = new_threshold
+            messagebox.showinfo("Threshold Updated", f"New maximum files threshold set to {self.max_seg_num}")
 
 root = tk.Tk()
 app = BirdSoundApp(root)
