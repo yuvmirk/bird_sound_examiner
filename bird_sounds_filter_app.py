@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, ttk, messagebox
+from tkinter import filedialog, ttk, messagebox, simpledialog
 import os
 import sys
 
@@ -66,7 +66,7 @@ class BirdSoundApp:
             print(f"Warning: Unable to create or write to log file. Error: {e}")
             self.log_file = None
         self.create_widgets()
-    
+ 
     def create_widgets(self):
         main_frame = ttk.Frame(self.master, padding="20 20 20 20")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -82,19 +82,20 @@ class BirdSoundApp:
         guidance_text = (
             "1. Choose the main folder containing all species folders.\n"
             "2. Select the species you wish to work on from the dropdown.\n"
-            "3. Click 'Start Examination' to begin.\n"
-            "4. For each audio file:\n"
-            "   - Press SPACE or Left-click to approve\n"
-            "   - Press RIGHT ARROW or Right-click for noise\n"
-            "   - Press LEFT ARROW or Middle-click for false positive\n"
-            "5. You can select a new folder at any time using the 'Select Folder' button."
+            "3. Set the maximum files threshold if needed.\n"
+            "4. Click 'Start Examination' to begin.\n"
+            "5. For each audio file, you have three ways to make a decision:\n"
+            "   - True Positive: Press SPACE, Left-click, or 'True Positive' button\n"
+            "   - Noise: Press RIGHT ARROW, Right-click, or 'Noise' button\n"
+            "   - False Positive: Press LEFT ARROW, Middle-click, or 'False Positive' button\n"
+            "   - Use 'Play Again' button to replay the current audio"
         )
         guidance_label = ttk.Label(guidance_frame, text=guidance_text, justify=tk.LEFT, wraplength=900, font=('Helvetica', 12))
         guidance_label.pack(pady=5)
 
         # Folder selection
         folder_frame = ttk.Frame(main_frame)
-        folder_frame.pack(pady=20, fill=tk.X)
+        folder_frame.pack(pady=10, fill=tk.X)
 
         self.folder_button = ttk.Button(folder_frame, text="Select Folder", command=self.select_folder, style="RoundedButton.TButton")
         self.folder_button.pack(side=tk.LEFT)
@@ -111,9 +112,40 @@ class BirdSoundApp:
         self.species_dropdown.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
         self.species_dropdown.bind("<<ComboboxSelected>>", self.on_species_selected)
 
+        # Set Max Files Threshold button
+        threshold_frame = ttk.Frame(main_frame)
+        threshold_frame.pack(pady=10, fill=tk.X)
+
+        self.set_threshold_button = ttk.Button(threshold_frame, text="Set Max Files Threshold", command=self.set_max_files_threshold, style="RoundedButton.TButton")
+        self.set_threshold_button.pack(side=tk.LEFT)
+
+        self.threshold_label = ttk.Label(threshold_frame, text=f"Max Files: {self.max_seg_num}", font=('Helvetica', 10, 'italic'))
+        self.threshold_label.pack(side=tk.LEFT, padx=10)
+
         # Start button
         self.start_button = ttk.Button(main_frame, text="Start Examination", command=self.start_examination, style="RoundedAccent.TButton")
         self.start_button.pack(pady=20)
+
+        # Control buttons
+        control_frame = ttk.Frame(main_frame)
+        control_frame.pack(pady=10, fill=tk.X)
+
+        button_width = 20
+        self.play_again_button = ttk.Button(control_frame, text="Play Again", command=self.play_again, style="RoundedPlayAgain.TButton", width=button_width)
+        self.play_again_button.pack(side=tk.LEFT, padx=5)
+
+        self.ok_button = ttk.Button(control_frame, text="True Positive", command=self.approve_decision, style="RoundedApprove.TButton", width=button_width)
+        self.ok_button.pack(side=tk.LEFT, padx=5)
+
+        self.noise_button = ttk.Button(control_frame, text="Noise", command=self.noise_decision, style="RoundedNoise.TButton", width=button_width)
+        self.noise_button.pack(side=tk.LEFT, padx=5)
+
+        self.fp_button = ttk.Button(control_frame, text="False Positive", command=self.false_positive_decision, style="RoundedFalsePositive.TButton", width=button_width)
+        self.fp_button.pack(side=tk.LEFT, padx=5)
+
+        # Approved count
+        self.approved_count_label = ttk.Label(control_frame, text="Approved Files: 0", font=('Helvetica', 12, 'bold'))
+        self.approved_count_label.pack(side=tk.RIGHT, padx=20)
 
         # Spectrogram
         spec_frame = ttk.Frame(main_frame)
@@ -130,33 +162,6 @@ class BirdSoundApp:
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(expand=True, fill=tk.BOTH)
 
-        # New frame for additional controls
-        additional_controls_frame = ttk.Frame(main_frame)
-        additional_controls_frame.pack(pady=10, fill=tk.X)
-
-        self.play_again_button = ttk.Button(additional_controls_frame, text="Play Again", command=self.play_again, style="RoundedButton.TButton")
-        self.play_again_button.pack(side=tk.LEFT, padx=5)
-
-        self.approved_count_label = ttk.Label(additional_controls_frame, text="Approved Files: 0", font=('Helvetica', 12, 'bold'))
-        self.approved_count_label.pack(side=tk.LEFT, padx=20)
-
-        self.set_threshold_button = ttk.Button(additional_controls_frame, text="Set Max Files Threshold", command=self.set_max_files_threshold, style="RoundedButton.TButton")
-        self.set_threshold_button.pack(side=tk.RIGHT, padx=5)
-
-        # Control buttons
-        control_frame = ttk.Frame(main_frame)
-        control_frame.pack(pady=20, fill=tk.X)
-
-        button_width = 25
-        self.ok_button = ttk.Button(control_frame, text="Approve (Space)", command=self.approve_decision, style="RoundedApprove.TButton", width=button_width)
-        self.ok_button.pack(side=tk.LEFT, padx=5, expand=True)
-
-        self.noise_button = ttk.Button(control_frame, text="Noise (Right Arrow)", command=self.noise_decision, style="RoundedNoise.TButton", width=button_width)
-        self.noise_button.pack(side=tk.LEFT, padx=5, expand=True)
-
-        self.fp_button = ttk.Button(control_frame, text="False Positive (Left Arrow)", command=self.false_positive_decision, style="RoundedFalsePositive.TButton", width=button_width)
-        self.fp_button.pack(side=tk.LEFT, padx=5, expand=True)
-
         # Bind keyboard shortcuts
         self.master.bind('<space>', self.approve_decision)
         self.master.bind('<Left>', self.false_positive_decision)
@@ -164,7 +169,7 @@ class BirdSoundApp:
         self.canvas_widget.bind("<Button-1>", self.approve_decision)
         self.canvas_widget.bind("<Button-2>", self.false_positive_decision)
         self.canvas_widget.bind("<Button-3>", self.noise_decision)
-
+    
     def approve_decision(self, event=None):
         self.process_decision("approve")
 
@@ -231,6 +236,14 @@ class BirdSoundApp:
                              relief="flat")
         self.style.map("RoundedFalsePositive.TButton",
                        background=[('active', '#D35400')])
+
+        self.style.configure("RoundedPlayAgain.TButton", 
+                             background="#3498DB",
+                             foreground="#ECF0F1",
+                             font=('Helvetica', 10, 'bold'),
+                             relief="flat")
+        self.style.map("RoundedPlayAgain.TButton",
+                       background=[('active', '#2980B9')])
 
         # Combobox style
         self.style.map('TCombobox', fieldbackground=[('readonly', '#34495E')])
@@ -319,7 +332,6 @@ class BirdSoundApp:
                 self.examine_next_file()
         else:
             self.log_message("No more files to examine. Entering completion block.")
-            # Gather detailed information
             detail_msg = "All files have been examined."
             self.log_message(detail_msg)
             messagebox.showinfo("Examination Complete", detail_msg)
@@ -365,14 +377,6 @@ class BirdSoundApp:
             target_file = os.path.normpath(os.path.join(target_folder, os.path.basename(self.current_file)))
             self.log_message(f"Moving file from {self.current_file} to {target_file}")
             
-            # Check if source file exists
-            if not os.path.exists(self.current_file):
-                raise FileNotFoundError(f"Source file not found: {self.current_file}")
-            
-            # Check if we have write permissions in the target folder
-            if not os.access(os.path.dirname(target_file), os.W_OK):
-                raise PermissionError(f"No write permission for target folder: {os.path.dirname(target_file)}")
-            
             shutil.move(self.current_file, target_file)
             self.log_message(f"File successfully moved to: {target_file}")
             
@@ -400,7 +404,7 @@ class BirdSoundApp:
             messagebox.showerror("Error", f"Error updating progress file:\n{progress_file_path}\n\nError: {str(e)}")
     
     def log_error(self, error_msg):
-        log_file_path = os.path.join(temp_dir, 'bird_sound_examiner_error_log.txt')
+        log_file_path = os.path.join(tempfile.gettempdir(), 'bird_sound_examiner_error_log.txt')
         with open(log_file_path, "a") as log_file:
             log_file.write(f"{error_msg}\n")
         self.log_message(f"Error logged to {log_file_path}")
@@ -441,8 +445,11 @@ class BirdSoundApp:
                                                 initialvalue=self.max_seg_num, minvalue=1, maxvalue=10000)
         if new_threshold:
             self.max_seg_num = new_threshold
+            self.threshold_label.config(text=f"Max Files: {self.max_seg_num}")
             messagebox.showinfo("Threshold Updated", f"New maximum files threshold set to {self.max_seg_num}")
 
-root = tk.Tk()
-app = BirdSoundApp(root)
-root.mainloop()
+# Main execution
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = BirdSoundApp(root)
+    root.mainloop()
