@@ -1,0 +1,39 @@
+name: macOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r mac-requirements.txt
+    
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --name="BirdSoundExaminer" --windowed --onefile your_script.py
+    
+    - name: Create DMG
+      run: |
+        hdiutil create -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: BirdSoundExaminer
+        path: BirdSoundExaminer.dmg
