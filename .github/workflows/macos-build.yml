@@ -8,6 +8,9 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
     runs-on: macos-latest
     
     steps:
@@ -28,35 +31,27 @@ jobs:
       env:
         MACOSX_DEPLOYMENT_TARGET: "10.12"
       run: |
-        pyinstaller --name="BirdSoundExaminer" \
+        pyinstaller --name="BirdSoundExaminer-${{ matrix.arch }}" \
                     --windowed \
                     --onefile \
-                    --target-architecture universal2 \
+                    --target-arch ${{ matrix.arch }} \
                     --osx-bundle-identifier "com.yourdomain.birdsoundexaminer" \
                     bird_sounds_filter_app.py
     
-    - name: Check disk space
-      run: df -h
-    
-    - name: Clean up disk space
-      run: |
-        sudo rm -rf /usr/local/lib/android
-        df -h
-    
     - name: Create DMG
       run: |
-        hdiutil create -size 200m -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
+        hdiutil create -size 200m -volname "BirdSoundExaminer-${{ matrix.arch }}" -srcfolder dist/BirdSoundExaminer-${{ matrix.arch }}.app -ov -format UDZO BirdSoundExaminer-${{ matrix.arch }}.dmg
     
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: BirdSoundExaminer
-        path: BirdSoundExaminer.dmg
+        name: BirdSoundExaminer-${{ matrix.arch }}
+        path: BirdSoundExaminer-${{ matrix.arch }}.dmg
     
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: BirdSoundExaminer.dmg
+        files: BirdSoundExaminer-${{ matrix.arch }}.dmg
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
