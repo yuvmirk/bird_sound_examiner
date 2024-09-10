@@ -30,8 +30,13 @@ jobs:
     
     - name: Create DMG
       run: |
-        hdiutil create -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
+        # Clean up space
+    	df -h
+    	sudo rm -rf /usr/local/lib/android
+    	df -h
     
+    	# Create a DMG with a specific size
+    	hdiutil create -size 100m -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg    
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
