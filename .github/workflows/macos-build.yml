@@ -25,8 +25,15 @@ jobs:
         pip install -r mac-requirements.txt
     
     - name: Build with PyInstaller
+      env:
+        MACOSX_DEPLOYMENT_TARGET: "10.12"
       run: |
-        pyinstaller --name="BirdSoundExaminer" --windowed --onefile bird_sounds_filter_app.py
+        pyinstaller --name="BirdSoundExaminer" \
+                    --windowed \
+                    --onefile \
+                    --target-architecture universal2 \
+                    --osx-bundle-identifier "com.yourdomain.birdsoundexaminer" \
+                    bird_sounds_filter_app.py
     
     - name: Check disk space
       run: df -h
