@@ -350,6 +350,7 @@ class BirdSoundApp:
         self.ax.clear()
         S = np.abs(librosa.stft(y))
         librosa.display.specshow(librosa.amplitude_to_db(S, ref=np.max), y_axis='hz', x_axis='time', ax=self.ax, sr=sr, cmap='viridis')
+        plt.ylim(0, 15000)
         self.ax.set_title(os.path.basename(self.current_file), color='#ECF0F1')
         self.ax.set_xlabel('Time', color='#ECF0F1')
         self.ax.set_ylabel('Frequency', color='#ECF0F1')
