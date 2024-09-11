@@ -1,4 +1,4 @@
-name: macOS ARM64 Build
+name: macOS ARM64 Build (Unsigned)
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
                     --windowed \
                     --onefile \
                     --target-arch arm64 \
-                    --osx-bundle-identifier "com.yuvmirk.birdsoundexaminer" \
+                    --osx-bundle-identifier "com.yourusername.birdsoundexaminer" \
                     bird_sounds_filter_app.py
     
     - name: Create DMG
@@ -43,7 +43,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: BirdSoundExaminer-arm64
+        name: BirdSoundExaminer-arm64-unsigned
         path: BirdSoundExaminer.dmg
     
     - name: Release
