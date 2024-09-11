@@ -1,4 +1,4 @@
-name: macOS Build
+name: macOS ARM64 Build
 
 on:
   push:
@@ -8,13 +8,6 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - arch: x86_64
-            python-version: '3.9'
-          - arch: arm64
-            python-version: '3.9'
     runs-on: macos-latest
     
     steps:
@@ -23,8 +16,8 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
+        python-version: '3.9'
+        architecture: 'arm64'
     
     - name: Install dependencies
       run: |
@@ -34,29 +27,29 @@ jobs:
     
     - name: Build with PyInstaller
       env:
-        MACOSX_DEPLOYMENT_TARGET: "10.12"
+        MACOSX_DEPLOYMENT_TARGET: "11.0"
       run: |
-        pyinstaller --name="BirdSoundExaminer-${{ matrix.arch }}" \
+        pyinstaller --name="BirdSoundExaminer" \
                     --windowed \
                     --onefile \
-                    --target-arch ${{ matrix.arch }} \
+                    --target-arch arm64 \
                     --osx-bundle-identifier "com.yuvmirk.birdsoundexaminer" \
                     bird_sounds_filter_app.py
     
     - name: Create DMG
       run: |
-        hdiutil create -size 200m -volname "BirdSoundExaminer-${{ matrix.arch }}" -srcfolder dist/BirdSoundExaminer-${{ matrix.arch }}.app -ov -format UDZO BirdSoundExaminer-${{ matrix.arch }}.dmg
+        hdiutil create -size 200m -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
     
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: BirdSoundExaminer-${{ matrix.arch }}
-        path: BirdSoundExaminer-${{ matrix.arch }}.dmg
+        name: BirdSoundExaminer-arm64
+        path: BirdSoundExaminer.dmg
     
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: BirdSoundExaminer-${{ matrix.arch }}.dmg
+        files: BirdSoundExaminer.dmg
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
