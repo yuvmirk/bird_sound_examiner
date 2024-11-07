@@ -1,28 +1,31 @@
 name: macOS ARM64 Build (Unsigned)
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         architecture: 'arm64'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
         pip install -r mac-requirements.txt
-    
+
     - name: Build with PyInstaller
       env:
         MACOSX_DEPLOYMENT_TARGET: "11.0"
@@ -33,17 +36,17 @@ jobs:
                     --target-arch arm64 \
                     --osx-bundle-identifier "com.yourusername.birdsoundexaminer" \
                     bird_sounds_filter_app.py
-    
+
     - name: Create DMG
       run: |
         hdiutil create -size 200m -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
-    
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: BirdSoundExaminer-arm64-unsigned
         path: BirdSoundExaminer.dmg
-    
+
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -51,3 +54,4 @@ jobs:
         files: BirdSoundExaminer.dmg
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
