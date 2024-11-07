@@ -1,20 +1,18 @@
 name: Build Windows Executable
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   build:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
@@ -23,14 +21,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller matplotlib numpy librosa soundfile sounddevice
-
     - name: Debug Info
       run: |
         python -c "import sys; print(sys.executable)"
         python -c "import matplotlib; print(matplotlib.__file__)"
         python -c "import matplotlib; print(matplotlib.get_data_path())"
         python -c "import sounddevice; print(sounddevice.__file__)"
-
     - name: Build with PyInstaller
       run: |
         $matplotlibDataPath = python -c "import matplotlib; print(matplotlib.get_data_path())"
@@ -44,9 +40,8 @@ jobs:
           --hidden-import sounddevice `
           --add-data "$matplotlibDataPath;matplotlib" `
           bird_sounds_filter_app.py
-
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Bird Sound Examiner
         path: dist/Bird Sound Examiner.exe
