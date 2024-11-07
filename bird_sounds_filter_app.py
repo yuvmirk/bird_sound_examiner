@@ -55,11 +55,6 @@ class BirdSoundApp:
         self.progress_file = "filtered species - updated list.txt"
         self.max_seg_num = 500
         self.approved_count = tk.IntVar(value=0)
-        self.main_frame = ttk.Frame(self.master, padding="20 20 20 20")
-        self.threshold_frame = ttk.Frame(self.main_frame)
-        self.random_order = tk.BooleanVar(value=True)
-        self.order_button = ttk.Checkbutton(self.threshold_frame, text="Random Order", variable=self.random_order, command=self.update_file_order)
-        self.order_button.pack(side=tk.LEFT, padx=10)
 
         # logging
         temp_dir = tempfile.gettempdir()
@@ -73,14 +68,15 @@ class BirdSoundApp:
         self.create_widgets()
  
     def create_widgets(self):
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame = ttk.Frame(self.master, padding="20 20 20 20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title_label = ttk.Label(self.main_frame, text="Bird Sound Examiner", font=('Helvetica', 20, 'bold'), foreground="#ECF0F1", background="#2C3E50")
+        title_label = ttk.Label(main_frame, text="Bird Sound Examiner", font=('Helvetica', 20, 'bold'), foreground="#ECF0F1", background="#2C3E50")
         title_label.pack(pady=(0, 20))
 
         # Guidance Panel
-        guidance_frame = ttk.LabelFrame(self.main_frame, text="Instructions", padding="10 10 10 10")
+        guidance_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10 10 10 10")
         guidance_frame.pack(pady=10, fill=tk.X)
 
         guidance_text = (
@@ -98,7 +94,7 @@ class BirdSoundApp:
         guidance_label.pack(pady=5)
 
         # Folder selection
-        folder_frame = ttk.Frame(self.main_frame)
+        folder_frame = ttk.Frame(main_frame)
         folder_frame.pack(pady=10, fill=tk.X)
 
         self.folder_button = ttk.Button(folder_frame, text="Select Folder", command=self.select_folder, style="RoundedButton.TButton")
@@ -108,7 +104,7 @@ class BirdSoundApp:
         self.folder_label.pack(side=tk.LEFT, padx=10)
 
         # Species selection
-        species_frame = ttk.Frame(self.main_frame)
+        species_frame = ttk.Frame(main_frame)
         species_frame.pack(pady=10, fill=tk.X)
 
         ttk.Label(species_frame, text="Select Species:", font=('Helvetica', 11)).pack(side=tk.LEFT)
@@ -117,20 +113,21 @@ class BirdSoundApp:
         self.species_dropdown.bind("<<ComboboxSelected>>", self.on_species_selected)
 
         # Set Max Files Threshold button
-        self.threshold_frame.pack(pady=10, fill=tk.X)
+        threshold_frame = ttk.Frame(main_frame)
+        threshold_frame.pack(pady=10, fill=tk.X)
 
-        self.set_threshold_button = ttk.Button(self.threshold_frame, text="Set Max Files Threshold", command=self.set_max_files_threshold, style="RoundedButton.TButton")
+        self.set_threshold_button = ttk.Button(threshold_frame, text="Set Max Files Threshold", command=self.set_max_files_threshold, style="RoundedButton.TButton")
         self.set_threshold_button.pack(side=tk.LEFT)
 
-        self.threshold_label = ttk.Label(self.threshold_frame, text=f"Max Files: {self.max_seg_num}", font=('Helvetica', 10, 'italic'))
+        self.threshold_label = ttk.Label(threshold_frame, text=f"Max Files: {self.max_seg_num}", font=('Helvetica', 10, 'italic'))
         self.threshold_label.pack(side=tk.LEFT, padx=10)
 
         # Start button
-        self.start_button = ttk.Button(self.main_frame, text="Start Examination", command=self.start_examination, style="RoundedAccent.TButton")
+        self.start_button = ttk.Button(main_frame, text="Start Examination", command=self.start_examination, style="RoundedAccent.TButton")
         self.start_button.pack(pady=20)
 
         # Control buttons
-        control_frame = ttk.Frame(self.main_frame)
+        control_frame = ttk.Frame(main_frame)
         control_frame.pack(pady=10, fill=tk.X)
 
         button_width = 20
@@ -151,7 +148,7 @@ class BirdSoundApp:
         self.approved_count_label.pack(side=tk.RIGHT, padx=20)
 
         # Spectrogram
-        spec_frame = ttk.Frame(self.main_frame)
+        spec_frame = ttk.Frame(main_frame)
         spec_frame.pack(pady=10, expand=True, fill=tk.BOTH)
 
         self.fig, self.ax = plt.subplots(figsize=(8, 4))
@@ -286,7 +283,7 @@ class BirdSoundApp:
         try:
             all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
             self.log_message(f"All files found: {all_files}")
-            self.files_to_examine = np.random.permutation(all_files).tolist()
+            self.files_to_examine = all_files.copy()
             self.log_message(f"Files to examine (randomized): {self.files_to_examine}")
             if self.files_to_examine:
                 self.start_button.config(state=tk.DISABLED)
@@ -451,15 +448,6 @@ class BirdSoundApp:
             self.max_seg_num = new_threshold
             self.threshold_label.config(text=f"Max Files: {self.max_seg_num}")
             messagebox.showinfo("Threshold Updated", f"New maximum files threshold set to {self.max_seg_num}")
-
-    def update_file_order(self):
-        species_folder = os.path.normpath(os.path.join(self.main_folder, self.current_species.get()))
-        all_files = [f for f in os.listdir(species_folder) if f.lower().endswith(('.wav', '.mp3'))]
-        if self.random_order.get():
-            self.files_to_examine = np.random.permutation(all_files).tolist()
-        else:
-            self.files_to_examine = all_files.copy()
-        self.reset_examination()
 
 # Main execution
 if __name__ == "__main__":
