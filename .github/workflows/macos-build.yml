@@ -1,57 +1,41 @@
-name: macOS ARM64 Build (Unsigned)
+name: Build and Deploy BirdSoundExaminer
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Check out the repository
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        architecture: 'arm64'
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-        pip install -r mac-requirements.txt
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Build with PyInstaller
-      env:
-        MACOSX_DEPLOYMENT_TARGET: "11.0"
-      run: |
-        pyinstaller --name="BirdSoundExaminer" \
-                    --windowed \
-                    --onefile \
-                    --target-arch arm64 \
-                    --osx-bundle-identifier "com.yourusername.birdsoundexaminer" \
-                    bird_sounds_filter_app.py
+      # Build executable with PyInstaller
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller --noconfirm --clean --onefile BirdSoundExaminer.py
+        continue-on-error: true
 
-    - name: Create DMG
-      run: |
-        hdiutil create -size 200m -volname "BirdSoundExaminer" -srcfolder dist/BirdSoundExaminer.app -ov -format UDZO BirdSoundExaminer.dmg
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: BirdSoundExaminer-arm64-unsigned
-        path: BirdSoundExaminer.dmg
-
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: BirdSoundExaminer.dmg
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Optionally, you can upload the build artifacts
+      - name: Upload executable as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: BirdSoundExaminer
+          path: dist/BirdSoundExaminer
 
